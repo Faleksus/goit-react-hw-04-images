@@ -1,85 +1,68 @@
-import PropTypes from 'prop-types';
-import Notiflix from 'notiflix';
+import PropTypes from "prop-types";
+import Notiflix from "notiflix";
+import { useState, useEffect, useRef } from "react";
 
 import { Button } from "./Button/Button";
 import { ImageGallery } from "./ImageGallery/ImageGallery";
 import { Searchbar } from "./Searchbar/Searchbar";
 import { Loader } from "./Loader/Loader";
-import { Component } from "react";
 import { pixabayGetImages } from "services/api";
-import { Section } from './Section/Section';
+import { Section } from "./Section/Section";
 
-export class App extends Component {
+export const App = () => {
+  const [images, setImages] = useState([]);
+  const [page, setPage] = useState(1);
+  const [query, setQuery] = useState("");
+  const [totalHits, setTotalHits] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const loading = useRef(true);
 
-  state = {
-    images: [],
-    page: 1,
-    query: '',
-    totalHits: null,
-    isLoading: false,
-    error: null,
-  };
+  useEffect(() => {
+    const onImageUpdate = async () => {
+      if (query !== setQuery || page !== setPage) {
+        setIsLoading(true);
 
-  async componentDidUpdate(_, prevState) {
-    const { query, page, images } = this.state;
-    if (
-      prevState.query !== query ||
-      prevState.page !== page
-    ) {
-      this.setState({
-        isLoading: true,
-      });
+        try {
+          const { hits, totalHits } = await pixabayGetImages(query, page);
+          setImages([...images, ...hits]);
+          setTotalHits(totalHits);
 
-      try {
-        const { hits, totalHits } = await pixabayGetImages(
-          query,
-          page
-        );
-        this.setState({
-          images:
-            page === 1 ? hits : [...images, ...hits],
-          totalHits: totalHits,
-        });
-
-        if (!totalHits) {
-          Notiflix.Notify.success(`Images with this name not found :${query}`);
-          return;
+          if (!totalHits) {
+            Notiflix.Notify.success(
+              `Images with this name not found :${query}`
+            );
+            return;
+          }
+        } catch (error) {
+          
+          setError(error);
+        } finally {
+          setIsLoading(false);
         }
-
-      } catch (error) {
-        this.setState({
-          error: error,
-        });
-      } finally {
-        this.setState({
-          isLoading: false,
-        });
       }
-    }
-  }
+    };
+    query && onImageUpdate();
+    loading.current = false;
+  }, [query, page, images, error]);
 
-  handleSubmit = query => {
-    this.setState({ query, page: 1 });
+  const handleSubmit = (query) => {
+    setQuery(query);
+    setPage(1);
   };
 
-  handleLoadMore = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }));
+  const handleLoadMore = () => {
+    setPage(page + 1);
   };
 
-  render() {
-    const { handleSubmit, handleLoadMore } = this;
-    const { images, isLoading, totalHits } = this.state;
-
-    return (
-      <Section>
-        <Searchbar onSubmit={handleSubmit} />
-        <ImageGallery images={images} />
-        {isLoading && <Loader />}
-        {totalHits > images.length && (<Button onLoadMore={handleLoadMore} />)}
-      </Section>
-
-    );
-  }
+  return (
+    <Section>
+      <Searchbar onSubmit={handleSubmit} />
+      <ImageGallery images={images} />
+      {isLoading && <Loader />}
+      {totalHits > images.length && <Button onLoadMore={handleLoadMore} />}
+    </Section>
+  );
 };
 
 App.propTypes = {
@@ -87,4 +70,4 @@ App.propTypes = {
   images: PropTypes.string,
   isLoading: PropTypes.bool,
   handleLoadMore: PropTypes.string,
-}
+};
