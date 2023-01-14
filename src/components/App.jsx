@@ -1,6 +1,6 @@
 import PropTypes from "prop-types";
 import Notiflix from "notiflix";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
 import { Button } from "./Button/Button";
 import { ImageGallery } from "./ImageGallery/ImageGallery";
@@ -16,34 +16,50 @@ export const App = () => {
   const [totalHits, setTotalHits] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const loading = useRef(true);
 
   useEffect(() => {
-    const onImageUpdate = async () => {
-      if (query !== setQuery || page !== setPage) {
-        setIsLoading(true);
-
+    if (query !== '') {
+      onImageUpdate()
+    }
+    async function onImageUpdate() {
+      setIsLoading(true);
+      if (page > 1) {
+        
         try {
-          const { hits, totalHits } = await pixabayGetImages(query, page);
-          setImages([...images, ...hits]);
-          setTotalHits(totalHits);
+          const images = await pixabayGetImages(query, page);
+          setImages(prevState => prevState.concat(images.hits));
 
-          if (!totalHits) {
-            Notiflix.Notify.success(
-              `Images with this name not found :${query}`
-            );
-            return;
-          }
+          // if (!totalHits) {
+          //   Notiflix.Notify.success(
+          //     `Images with this name not found :${query}`
+          //   );
+          //   return;
+          // }
         } catch (error) {
-          
           setError(error);
         } finally {
           setIsLoading(false);
         }
+      } else {
+        try {
+          const result = await pixabayGetImages(query, page);
+          if (result.total === 0) {
+              Notiflix.Notify.success(
+                `Images with this name not found :${query}`
+              );
+              return;
+          } else {
+            setImages(result.hits)
+            setTotalHits(result.totalHits)
+            return
+          }
+        } catch (error) {
+          setError(error)
+        } finally {
+          setIsLoading(false)
+        }
       }
     };
-    query && onImageUpdate();
-    loading.current = false;
   }, [query, page, images, error]);
 
   const handleSubmit = (query) => {
@@ -51,7 +67,8 @@ export const App = () => {
     setPage(1);
   };
 
-  const handleLoadMore = () => {
+  const handleLoadMore = (event) => {
+    event.preventDefault()
     setPage(page + 1);
   };
 
