@@ -19,57 +19,53 @@ export const App = () => {
 
   useEffect(() => {
     if (query !== '') {
-      onImageUpdate()
+      componentDidUpdate()
     }
-    async function onImageUpdate() {
+ 
+  async function componentDidUpdate(_, prevState) {
+    // const { query, page, images } = this.state;
+    if (
+      prevState.query !== query ||
+      prevState.page !== page
+    ) {
       setIsLoading(true);
-      if (page > 1) {
-        
-        try {
-          const images = await pixabayGetImages(query, page);
-          setImages(prevState => prevState.concat(images.hits));
 
-          // if (!totalHits) {
-          //   Notiflix.Notify.success(
-          //     `Images with this name not found :${query}`
-          //   );
-          //   return;
-          // }
-        } catch (error) {
-          setError(error);
-        } finally {
-          setIsLoading(false);
+      try {
+        const { hits, totalHits } = await pixabayGetImages(
+          query,
+          page
+        );
+        setImages(page === 1 ? hits : [...images, ...hits],
+          setTotalHits(totalHits)
+        );
+
+        if (!totalHits) {
+          Notiflix.Notify.success(`Images with this name not found :${query}`);
+          return;
         }
-      } else {
-        try {
-          const result = await pixabayGetImages(query, page);
-          if (result.total === 0) {
-              Notiflix.Notify.success(
-                `Images with this name not found :${query}`
-              );
-              return;
-          } else {
-            setImages(result.hits)
-            setTotalHits(result.totalHits)
-            return
-          }
-        } catch (error) {
-          setError(error)
-        } finally {
-          setIsLoading(false)
-        }
+
+      } catch (error) {
+        setError(error)
+      } finally {
+          setIsLoading(true)
       }
-    };
-  }, [query, page, images, error]);
+    }
+  }
+}, [query, page, images, error, totalHits]);
 
-  const handleSubmit = (query) => {
+  const handleSubmit = query => {
+    // this.setState({ query, page: 1 });
     setQuery(query);
-    setPage(1);
+    setPage(1)
   };
+
+  // const handleLoadMore = () => {
+  //   this.setState(prevState => ({ page: prevState.page + 1 }));
+  // };
 
   const handleLoadMore = (event) => {
     event.preventDefault()
-    setPage(page + 1);
+    setPage(prevState => prevState + 1);
   };
 
   return (
