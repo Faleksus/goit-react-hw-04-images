@@ -18,54 +18,41 @@ export const App = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (query !== '') {
-      componentDidUpdate()
+    if (!query) {
+      return;
     }
- 
-  async function componentDidUpdate(_, prevState) {
-    // const { query, page, images } = this.state;
-    if (
-      prevState.query !== query ||
-      prevState.page !== page
-    ) {
-      setIsLoading(true);
-
+    setIsLoading(true);
+    const componentDidUpdate = async () => {
       try {
-        const { hits, totalHits } = await pixabayGetImages(
-          query,
-          page
-        );
-        setImages(page === 1 ? hits : [...images, ...hits],
+        const { hits, totalHits } = await pixabayGetImages(query, page);
+        setImages(
+          (prevPage) => (page === 1 ? hits : [...prevPage, ...hits]),
           setTotalHits(totalHits)
         );
 
         if (!totalHits) {
           Notiflix.Notify.success(`Images with this name not found :${query}`);
+          setIsLoading(false);
           return;
         }
-
       } catch (error) {
-        setError(error)
+        setError(error);
       } finally {
-          setIsLoading(true)
+        setIsLoading(false);
       }
-    }
-  }
-}, [query, page, images, error, totalHits]);
+    };
 
-  const handleSubmit = query => {
-    // this.setState({ query, page: 1 });
+    componentDidUpdate();
+  }, [query, page, error]);
+
+  const handleSubmit = (query) => {
     setQuery(query);
-    setPage(1)
+    setPage(1);
   };
 
-  // const handleLoadMore = () => {
-  //   this.setState(prevState => ({ page: prevState.page + 1 }));
-  // };
-
   const handleLoadMore = (event) => {
-    event.preventDefault()
-    setPage(prevState => prevState + 1);
+    event.preventDefault();
+    setPage((prevState) => prevState + 1);
   };
 
   return (
