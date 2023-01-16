@@ -15,14 +15,13 @@ export const App = () => {
   const [query, setQuery] = useState("");
   const [totalHits, setTotalHits] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!query) {
       return;
     }
     setIsLoading(true);
-    const componentDidUpdate = async () => {
+    const getImages = async () => {
       try {
         const { hits, totalHits } = await pixabayGetImages(query, page);
         setImages(
@@ -36,14 +35,14 @@ export const App = () => {
           return;
         }
       } catch (error) {
-        setError(error);
+
       } finally {
         setIsLoading(false);
       }
     };
 
-    componentDidUpdate();
-  }, [query, page, error]);
+    getImages();
+  }, [query, page]);
 
   const handleSubmit = (query) => {
     setQuery(query);
@@ -51,7 +50,6 @@ export const App = () => {
   };
 
   const handleLoadMore = (event) => {
-    event.preventDefault();
     setPage((prevState) => prevState + 1);
   };
 
