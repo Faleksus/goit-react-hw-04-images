@@ -15,6 +15,7 @@ export const App = () => {
   const [query, setQuery] = useState("");
   const [totalHits, setTotalHits] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  // const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!query) {
@@ -35,7 +36,7 @@ export const App = () => {
           return;
         }
       } catch (error) {
-
+        // setError(error);
       } finally {
         setIsLoading(false);
       }
@@ -49,7 +50,7 @@ export const App = () => {
     setPage(1);
   };
 
-  const handleLoadMore = (event) => {
+  const handleLoadMore = () => {
     setPage((prevState) => prevState + 1);
   };
 
